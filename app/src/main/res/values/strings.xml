@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">计算器</string>
+    <drawable name="unpressed">#888888</drawable>
+    <drawable name="pressed">#FF0000</drawable>
+</resources>
