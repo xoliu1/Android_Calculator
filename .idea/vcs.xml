@@ -3,6 +3,7 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$/.." vcs="Git" />
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/Android_Calculator" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Android_Cauculator" vcs="Git" />
   </component>
 </project>
