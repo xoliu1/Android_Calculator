@@ -3,17 +3,25 @@ package com.example.calculator;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+
+    private String[] formulas;
+    List<String> stringList;
+
 
     private Button btn_0;
     private Button btn_1;
@@ -37,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button btn_right;
     private Button btn_getResult;   //等于
     private TextView text;
+    private TextView lastNumbers;
     //==
 
 
@@ -48,9 +57,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.menu_call){
-            MediaPlayer mMediaPlayer= MediaPlayer.create(this, R.raw.ganma);
+        if (item.getItemId() == R.id.menu_call) {
+            MediaPlayer mMediaPlayer = MediaPlayer.create(this, R.raw.ganma);
             mMediaPlayer.start();
+            Intent intent = new Intent(MainActivity.this, ListViewItem.class);
+            //
+            formulas = new String[stringList.size()];
+            int i = 0;
+            for (String s : stringList) {
+                formulas[i++] = s;
+            }
+            //
+            intent.putExtra("formulas", formulas);
+            startActivity(intent);
         }
         return true;
     }
@@ -105,28 +124,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //
         text = (TextView) findViewById(R.id.et_input);
         text.setText("0");
-
+        stringList = new ArrayList<>();
     }
 
+    boolean isResult = false;
 
     @Override
     public void onClick(View v) {
-        MediaPlayer mMediaPlayer= MediaPlayer.create(this, R.raw.jijiao);
+        MediaPlayer mMediaPlayer = MediaPlayer.create(this, R.raw.jijiao);
         mMediaPlayer.start();
 
         /***/
         int id = v.getId();
 
-        if (id == R.id.btn_clear){
+        if (id == R.id.btn_clear) {
             text.setText("0");
-        }else if (id == R.id.btn_getResult){
+            isResult = false;
+        } else if (id == R.id.btn_getResult) {
+            isResult = true;
+
             String str = text.getText().toString();
+            String leftFormula = text.getText().toString();
 
             str = translateDoubleopreate(str);
 
 
             str = str.replaceAll("[(]-", "(0-");
-            if (str.charAt(0) == '-'){
+            if (str.charAt(0) == '-') {
                 str = "0" + str;
             }
 
@@ -139,13 +163,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 text.setText("0");
             }
 
-            if (!isLegal){
+            if (!isLegal) {
                 Toast.makeText(this, "错误的表达式！", Toast.LENGTH_LONG).show();
                 text.setText("0");
-            }else {
+            } else {
                 String res = null;
                 try {
                     res = (MathExpressionCalculator.calculate(str)) + "";
+                    if (res.equals("-0")) {
+                        res = "0";
+                    }
+                    //
+                    stringList.add(leftFormula + "  =  " + MathExpressionCalculator.rvZeroAndDot(res));
+                    //
                     text.setText(MathExpressionCalculator.rvZeroAndDot(res));
                 } catch (Exception e) {
                     Toast.makeText(this, "错误的表达式", Toast.LENGTH_LONG).show();
@@ -153,50 +183,58 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
 
             }
-        }else if (id == R.id.btn_del){
-            if (text.getText().toString().equals("0")){
+        } else if (id == R.id.btn_del) {
+            if (!isResult) {
+                if (text.getText().toString().equals("0")) {
                     //不做处理
-            } else if (text.getText().toString().length() == 1) {
-                text.setText("0");
-            } else{
-                text.setText(text.getText().toString().substring(0, text.getText().toString().length() - 1));
+                } else if (text.getText().toString().length() == 1) {
+                    text.setText("0");
+                } else {
+                    text.setText(text.getText().toString().substring(0, text.getText().toString().length() - 1));
+                }
             }
-
-        }
-        else{
-            if (text.getText().toString().equals("0") && id != R.id.btn_cheng && id != R.id.btn_left && id != R.id.btn_right && id != R.id.btn_devide && id != R.id.btn_subtract && id != R.id.btn_plus && id != R.id.btn_point) {
-                //此时按的就是0-9且只有一个0
-                text.setText(((Button)v).getText());
-            }else if (text.getText().toString().equals("0") && id == R.id.btn_left){
-                text.setText("0+" + ((Button)v).getText());
-            } else {
-                String tmp = text.getText().toString();
-                text.setText(tmp + ((Button)v).getText());
+        } else {
+            if (!isResult){
+                if (text.getText().toString().equals("0") && id != R.id.btn_cheng && id != R.id.btn_left && id != R.id.btn_right && id != R.id.btn_devide && id != R.id.btn_subtract && id != R.id.btn_plus && id != R.id.btn_point) {
+                    //此时按的就是0-9且只有一个0
+                    text.setText(((Button) v).getText());
+                    isResult = false;
+                } else if (text.getText().toString().equals("0") && id == R.id.btn_left) {
+                    text.setText(((Button) v).getText());
+                } else {
+                    String tmp = text.getText().toString();
+                    text.setText(tmp + ((Button) v).getText());
+                }
+            }else{
+                isResult = false;
+                text.setText("0");
+                onClick(v);
             }
         }
     }
-    public String translateDoubleopreate(String str){
-        while (str.contains("--")){
+
+    public String translateDoubleopreate(String str) {
+        while (str.contains("--")) {
             str = str.replaceAll("--", "+");
         }
-        while (str.contains("+-")){
+        while (str.contains("+-")) {
             str = str.replaceAll("[+]-", "-");
         }
         //用于处理负数前带有操作数的问题**************
-        while (str.contains("*-")){
+        while (str.contains("*-")) {
             //*-n改成*(0 - n)
             int idx = str.indexOf("*-");
             int i = idx + 2;
-            while (i <= str.length() - 1 && (str.charAt(i) < '0' && str.charAt(i) > '9')){
+            while (i <= str.length() - 1 && (str.charAt(i) < '0' && str.charAt(i) > '9')) {
                 ++i;
             }
             str = str.substring(0, idx + 1) + "(0" + str.substring(idx + 1, i) + str.substring(i, str.length()) + ")";
         }
-        while (str.contains("/-")){
+        while (str.contains("/-")) {
             //*-n改成*(0 - n)
             int idx = str.indexOf("/-");
             int i = idx + 2;
-            while (i <= str.length() - 1 && (str.charAt(i) < '0' && str.charAt(i) > '9')){
+            while (i <= str.length() - 1 && (str.charAt(i) < '0' && str.charAt(i) > '9')) {
                 ++i;
             }
             str = str.substring(0, idx + 1) + "(0" + str.substring(idx + 1, i) + str.substring(i, str.length()) + ")";
